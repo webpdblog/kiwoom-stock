@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10011', name: '신주인수권전체시세요청' },
           { id: 'ka10013', name: '신용매매동향요청' },
           { id: 'ka10014', name: '공매도추이요청' },
-          { id: 'ka10015', name: '일별거래상세요청' }
+          { id: 'ka10015', name: '일별거래상세요청' },
+          { id: 'ka10016', name: '신고저가요청' }
         ];
 
         if (apiSelector) {
@@ -1726,6 +1727,224 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       submitBtn.addEventListener('click', fetchAndDisplayDailyTradingDetails);
+    } else if (actionId === 'ka10016') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>신고저가요청 (ka10016)</h1>
+        <div class="horizontal-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="market-type-input-ka10016">시장구분:</label>
+              <select id="market-type-input-ka10016" name="market-type">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="new-high-low-type-input-ka10016">신고저구분:</label>
+              <select id="new-high-low-type-input-ka10016" name="new-high-low-type">
+                <option value="1">신고가</option>
+                <option value="2">신저가</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="high-low-close-type-input-ka10016">고저종구분:</label>
+              <select id="high-low-close-type-input-ka10016" name="high-low-close-type">
+                <option value="1">고저기준</option>
+                <option value="2">종가기준</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="stock-condition-input-ka10016">종목조건:</label>
+              <select id="stock-condition-input-ka10016" name="stock-condition">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="trade-qty-type-input-ka10016">거래량구분:</label>
+              <select id="trade-qty-type-input-ka10016" name="trade-qty-type">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="credit-condition-input-ka10016">신용조건:</label>
+              <select id="credit-condition-input-ka10016" name="credit-condition">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="updown-include-input-ka10016">상하한포함:</label>
+              <select id="updown-include-input-ka10016" name="updown-include">
+                <option value="0">미포함</option>
+                <option value="1">포함</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="period-input-ka10016">기간:</label>
+              <select id="period-input-ka10016" name="period">
+                <option value="5">5일</option>
+                <option value="10">10일</option>
+                <option value="20">20일</option>
+                <option value="60">60일</option>
+                <option value="250">250일</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="exchange-type-input-ka10016">거래소구분:</label>
+              <select id="exchange-type-input-ka10016" name="exchange-type">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <button id="new-high-low-submit-btn">조회</button>
+          </div>
+        </div>
+        <div id="new-high-low-result"></div>
+      `;
+
+      const marketTypeInput = document.getElementById('market-type-input-ka10016') as HTMLSelectElement;
+      const newHighLowTypeInput = document.getElementById('new-high-low-type-input-ka10016') as HTMLSelectElement;
+      const highLowCloseTypeInput = document.getElementById('high-low-close-type-input-ka10016') as HTMLSelectElement;
+      const stockConditionInput = document.getElementById('stock-condition-input-ka10016') as HTMLSelectElement;
+      const tradeQtyTypeInput = document.getElementById('trade-qty-type-input-ka10016') as HTMLSelectElement;
+      const creditConditionInput = document.getElementById('credit-condition-input-ka10016') as HTMLSelectElement;
+      const upDownIncludeInput = document.getElementById('updown-include-input-ka10016') as HTMLSelectElement;
+      const periodInput = document.getElementById('period-input-ka10016') as HTMLSelectElement;
+      const exchangeTypeInput = document.getElementById('exchange-type-input-ka10016') as HTMLSelectElement;
+      const submitBtn = document.getElementById('new-high-low-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('new-high-low-result') as HTMLDivElement;
+
+      const fetchAndDisplayNewHighLowData = async () => {
+        resultDiv.innerHTML = 'Fetching new/high-low price data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-new-high-low-data', {
+            marketType: marketTypeInput.value,
+            newHighLowType: newHighLowTypeInput.value,
+            highLowCloseType: highLowCloseTypeInput.value,
+            stockCondition: stockConditionInput.value,
+            tradeQtyType: tradeQtyTypeInput.value,
+            creditCondition: creditConditionInput.value,
+            upDownInclude: upDownIncludeInput.value,
+            period: periodInput.value,
+            exchangeType: exchangeTypeInput.value,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const newHighLowData = result.newHighLowData;
+            
+            if (!newHighLowData || newHighLowData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (signCode: string) => {
+              switch(signCode) {
+                case '1': return '△';
+                case '2': return '▲';
+                case '3': return '-';
+                case '4': return '▼';
+                case '5': return '▽';
+                default: return '';
+              }
+            };
+
+            let tableHTML = '<table class="new-high-low-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목명', '현재가', '전일대비', '등락률', '거래량', 
+              '전일거래량대비율', '매도호가', '매수호가', '고가', '저가'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            newHighLowData.forEach((item: any) => {
+              const currentPrice = formatNumber(item.cur_prc || '0');
+              const previousDiff = formatNumber(item.pred_pre || '0');
+              const changeRate = item.flu_rt || '0';
+              const volume = formatNumber(item.trde_qty || '0');
+              const volumeRatio = item.pred_trde_qty_pre_rt || '0';
+              const sellBid = formatNumber(item.sel_bid || '0');
+              const buyBid = formatNumber(item.buy_bid || '0');
+              const highPrice = formatNumber(item.high_pric || '0');
+              const lowPrice = formatNumber(item.low_pric || '0');
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd || ''}</td>`;
+              tableHTML += `<td>${item.stk_nm || ''}</td>`;
+              tableHTML += `<td>${currentPrice}</td>`;
+              tableHTML += `<td>${signSymbol}${previousDiff}</td>`;
+              tableHTML += `<td>${changeRate}%</td>`;
+              tableHTML += `<td>${volume}</td>`;
+              tableHTML += `<td>${volumeRatio}%</td>`;
+              tableHTML += `<td>${sellBid}</td>`;
+              tableHTML += `<td>${buyBid}</td>`;
+              tableHTML += `<td>${highPrice}</td>`;
+              tableHTML += `<td>${lowPrice}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayNewHighLowData);
     }
   });
 });

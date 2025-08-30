@@ -671,3 +671,41 @@ ipcMain.handle('get-daily-trading-details', async (event, { code, startDate, tok
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting new/high-low price data
+ipcMain.handle('get-new-high-low-data', async (event, { marketType, newHighLowType, highLowCloseType, stockCondition, tradeQtyType, creditCondition, upDownInclude, period, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10016',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mrkt_tp: marketType,
+        ntl_tp: newHighLowType,
+        high_low_close_tp: highLowCloseType,
+        stk_cnd: stockCondition,
+        trde_qty_tp: tradeQtyType,
+        crd_cnd: creditCondition,
+        updown_incls: upDownInclude,
+        dt: period,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, newHighLowData: data.ntl_pric || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});
