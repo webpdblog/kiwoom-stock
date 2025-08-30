@@ -50,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10005', name: '주식일주월시분요청' },
           { id: 'ka10006', name: '주식시분요청' },
           { id: 'ka10007', name: '시세표성정보요청' },
-          { id: 'ka10008', name: '주식외국인종목별매매동향' }
+          { id: 'ka10008', name: '주식외국인종목별매매동향' },
+          { id: 'ka10009', name: '주식기관요청' }
         ];
 
         if (menu) {
@@ -935,6 +936,113 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayForeignTradingTrend(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10009') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>주식기관요청 (ka10009)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10009">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10009" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10009" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="institution-trading-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10009') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10009') as HTMLDivElement;
+      const resultDiv = document.getElementById('institution-trading-result') as HTMLDivElement;
+
+      const fetchAndDisplayInstitutionTradingData = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching institution trading data...';
+        try {
+          const result = await window.electronAPI.invoke('get-institution-trading-data', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const institutionData = result.institutionData;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            let tableHTML = '<table class="institution-trading-table"><tbody>';
+            const fields = {
+              date: '날짜',
+              close_pric: '종가',
+              pre: '대비',
+              orgn_dt_acc: '기관기간누적',
+              orgn_daly_nettrde: '기관일별순매매',
+              frgnr_daly_nettrde: '외국인일별순매매',
+              frgnr_qota_rt: '외국인지분율',
+            };
+
+            for (const key in fields) {
+              if (fields.hasOwnProperty(key)) {
+                const value = institutionData[key];
+                let formattedValue = value;
+                if (key === 'date') {
+                  formattedValue = formatDate(value);
+                } else if (key === 'frgnr_qota_rt') {
+                  // This is already a string with percentage
+                } else {
+                  formattedValue = formatNumber(value);
+                }
+                tableHTML += `<tr><td><strong>${fields[key]}</strong></td><td>${formattedValue}</td></tr>`;
+              }
+            }
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayInstitutionTradingData(stockCode);
         }
       });
     }
