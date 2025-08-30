@@ -44,8 +44,8 @@ if (started) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, // Enable context isolation
@@ -210,6 +210,72 @@ ipcMain.handle('get-stock-list', async (event, { mrkt_tp, token }) => {
       });
       stmt.finalize();
       return { success: true, list: stocks };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});
+
+// IPC handler for searching stocks
+ipcMain.handle('search-stocks', async (event, { term }) => {
+  return new Promise((resolve, reject) => {
+    if (!term) {
+      return resolve([]);
+    }
+    db.all(
+      "SELECT code, name FROM stocks WHERE name LIKE ? OR code LIKE ? LIMIT 10",
+      [`${term}%`, `${term}%`],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      }
+    );
+  });
+});
+
+// IPC handler for getting basic stock info
+ipcMain.handle('get-stock-info', async (event, { query, token }) => {
+  try {
+    let stk_cd = query;
+    // If query is not a 6-digit number, assume it's a name and look up the code
+    if (!/^\d{6}$/.test(query)) {
+      const row: { code: string } | undefined = await new Promise((resolve, reject) => {
+        db.get("SELECT code FROM stocks WHERE name = ?", [query], (err, row) => {
+          if (err) reject(err);
+          else resolve(row as { code: string });
+        });
+      });
+      if (row) {
+        stk_cd = row.code;
+      } else {
+        return { success: false, message: `Stock not found for name: ${query}` };
+      }
+    }
+
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10001',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        stk_cd: stk_cd,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, info: data };
     } else {
       return { success: false, message: data.return_msg || 'Unknown error' };
     }
