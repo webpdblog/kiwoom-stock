@@ -97,3 +97,38 @@ ipcMain.handle('login', async (event, { appkey, secretkey }) => {
     return { success: false, message: error.message };
   }
 });
+
+// IPC handler for revoking token
+ipcMain.handle('revoke-token', async (event, { appkey, secretkey, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/oauth2/revoke';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'au10002',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        appkey: appkey || process.env.APPKEY,
+        secretkey: secretkey || process.env.SECRETKEY,
+        token: token,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      console.log('Token revoked:', data);
+      return { success: true, message: data.return_msg };
+    } else {
+      console.error('Token revocation failed:', data);
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    console.error('Error during token revocation:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

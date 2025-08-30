@@ -2,8 +2,8 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Hello World!</title>
-
+    <title>Kiwoom Stock</title>
+    <link rel="stylesheet" href="/src/index.css">
   </head>
   <body>
     <div id="login-container">
@@ -21,6 +21,24 @@
       </form>
       <div id="message"></div>
     </div>
+
+    <div id="app-container" style="display: none;">
+      <div id="sidebar">
+        <div class="logo">Kiwoom Stock</div>
+        <ul class="menu">
+          <!-- Menu items will be injected here -->
+        </ul>
+      </div>
+      <div id="main-content">
+        <header>
+          <h1>Welcome</h1>
+        </header>
+        <div class="content">
+          <!-- Content will be loaded here -->
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/renderer.ts"></script>
   </body>
 </html>
