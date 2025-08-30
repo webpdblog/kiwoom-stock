@@ -42,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
         appContainer.style.display = 'flex'; // Use flex to manage sidebar and content
 
         const menuItems = [
-          { id: 'au10002', name: '접근토큰 폐기' }
+          { id: 'au10002', name: '접근토큰 폐기' },
+          { id: 'ka10099', name: '종목정보 리스트' }
         ];
 
         if (menu) {
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   menu.addEventListener('click', async (event) => {
     event.preventDefault();
     const target = event.target as HTMLAnchorElement;
+    if (!target.dataset.id) return;
     const actionId = target.dataset.id;
 
     if (actionId === 'au10002') {
@@ -104,6 +106,36 @@ document.addEventListener('DOMContentLoaded', () => {
               messageDiv.textContent = '';
             }
           }, 1000);
+        } else {
+          mainContent.innerHTML = `<h1>Error</h1><p>${result.message}</p>`;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        mainContent.innerHTML = `<h1>Error</h1><p>${errorMessage}</p>`;
+      }
+    } else if (actionId === 'ka10099') {
+      if (!mainContent) return;
+      mainContent.innerHTML = '<h1>Fetching Stock List...</h1>';
+      try {
+        const result = await window.electronAPI.invoke('get-stock-list', {
+          mrkt_tp: '0', // KOSPI for now
+          token: accessToken,
+        });
+
+        if (result.success) {
+          let tableHTML = '<table><thead><tr>';
+          const headers = ['code', 'name', 'listCount', 'auditInfo', 'regDay', 'lastPrice', 'state', 'marketName', 'upName'];
+          headers.forEach(h => tableHTML += `<th>${h}</th>`);
+          tableHTML += '</tr></thead><tbody>';
+
+          result.list.forEach((stock: any) => {
+            tableHTML += '<tr>';
+            headers.forEach(h => tableHTML += `<td>${stock[h]}</td>`);
+            tableHTML += '</tr>';
+          });
+
+          tableHTML += '</tbody></table>';
+          mainContent.innerHTML = `<h1>Stock List (KOSPI)</h1>${tableHTML}`;
         } else {
           mainContent.innerHTML = `<h1>Error</h1><p>${result.message}</p>`;
         }
