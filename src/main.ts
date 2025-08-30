@@ -640,3 +640,34 @@ ipcMain.handle('get-short-selling-trend', async (event, { code, timeType, startD
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting daily trading details
+ipcMain.handle('get-daily-trading-details', async (event, { code, startDate, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10015',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        stk_cd: code,
+        strt_dt: startDate,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, dailyTradingData: data.daly_trde_dtl || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

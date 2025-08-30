@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const secretkeyInput = document.getElementById('secretkey') as HTMLInputElement;
   const messageDiv = document.getElementById('message') as HTMLDivElement;
   const appContainer = document.getElementById('app-container') as HTMLDivElement;
-  const menu = document.querySelector('#sidebar .menu');
+  const apiSelector = document.getElementById('api-selector') as HTMLSelectElement;
   const mainContent = document.querySelector('#main-content .content');
 
   let accessToken = '';
@@ -55,15 +55,17 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10010', name: '업종프로그램요청' },
           { id: 'ka10011', name: '신주인수권전체시세요청' },
           { id: 'ka10013', name: '신용매매동향요청' },
-          { id: 'ka10014', name: '공매도추이요청' }
+          { id: 'ka10014', name: '공매도추이요청' },
+          { id: 'ka10015', name: '일별거래상세요청' }
         ];
 
-        if (menu) {
-          menu.innerHTML = ''; // Clear existing menu items
+        if (apiSelector) {
+          apiSelector.innerHTML = '<option value="">-- API를 선택하세요 --</option>'; // Clear existing options
           menuItems.forEach(item => {
-            const li = document.createElement('li');
-            li.innerHTML = `<a href="#" data-id="${item.id}">${item.name} (${item.id})</a>`;
-            menu.appendChild(li);
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.id})`;
+            apiSelector.appendChild(option);
           });
         }
 
@@ -78,11 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  menu.addEventListener('click', async (event) => {
-    event.preventDefault();
-    const target = event.target as HTMLAnchorElement;
-    if (!target.dataset.id) return;
-    const actionId = target.dataset.id;
+  apiSelector.addEventListener('change', async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const actionId = target.value;
+    if (!actionId) return;
 
     if (actionId === 'au10002') {
       if (!mainContent) return;
@@ -1567,6 +1568,164 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       submitBtn.addEventListener('click', fetchAndDisplayShortSellingTrend);
+    } else if (actionId === 'ka10015') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>일별거래상세요청 (ka10015)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10015">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10015" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10015" class="autocomplete-suggestions"></div>
+        </div>
+        <div class="input-group">
+          <label for="start-date-input-ka10015">시작일자:</label>
+          <input type="date" id="start-date-input-ka10015" name="start-date" value="${new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]}">
+          <button id="daily-trading-submit-btn">조회</button>
+        </div>
+        <div id="daily-trading-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10015') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10015') as HTMLDivElement;
+      const startDateInput = document.getElementById('start-date-input-ka10015') as HTMLInputElement;
+      const submitBtn = document.getElementById('daily-trading-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('daily-trading-result') as HTMLDivElement;
+
+      let selectedStockCode = '';
+
+      const fetchAndDisplayDailyTradingDetails = async () => {
+        if (!selectedStockCode) {
+          resultDiv.innerHTML = '<p style="color: red;">종목을 먼저 선택해주세요.</p>';
+          return;
+        }
+
+        const selectedStartDate = startDateInput.value.replace(/-/g, ''); // YYYYMMDD format
+        
+        resultDiv.innerHTML = 'Fetching daily trading details...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-daily-trading-details', {
+            code: selectedStockCode,
+            startDate: selectedStartDate,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const dailyTradingData = result.dailyTradingData;
+            
+            if (!dailyTradingData || dailyTradingData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            const getSignSymbol = (sign: string) => {
+              switch (sign) {
+                case '1': return '▲';
+                case '2': return '▲';
+                case '4': return '▼';
+                case '5': return '▼';
+                case '0':
+                default: return '-';
+              }
+            };
+
+            let tableHTML = '<h3>일별거래상세</h3>';
+            tableHTML += '<table class="daily-trading-table"><thead><tr>';
+            const headers = [
+              '일자', '종가', '대비기호', '전일대비', '등락율', '거래량', '거래대금',
+              '장전거래량', '장전거래비중', '장중거래량', '장중거래비중', '장후거래량', '장후거래비중',
+              '체결강도', '외인보유', '외인비중', '외인순매수', '기관순매수', '개인순매수',
+              '외국계', '신용잔고율', '프로그램'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            dailyTradingData.forEach((item: any) => {
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+              tableHTML += '<tr>';
+              tableHTML += `<td>${formatDate(item.dt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.close_pric)}</td>`;
+              tableHTML += `<td>${signSymbol}</td>`;
+              tableHTML += `<td>${formatNumber(item.pred_pre)}</td>`;
+              tableHTML += `<td>${item.flu_rt}%</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_prica)}</td>`;
+              tableHTML += `<td>${formatNumber(item.bf_mkrt_trde_qty)}</td>`;
+              tableHTML += `<td>${item.bf_mkrt_trde_wght || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.opmr_trde_qty)}</td>`;
+              tableHTML += `<td>${item.opmr_trde_wght || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.af_mkrt_trde_qty)}</td>`;
+              tableHTML += `<td>${item.af_mkrt_trde_wght || '-'}</td>`;
+              tableHTML += `<td>${item.cntr_str || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.for_poss)}</td>`;
+              tableHTML += `<td>${item.for_wght || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.for_netprps)}</td>`;
+              tableHTML += `<td>${formatNumber(item.orgn_netprps)}</td>`;
+              tableHTML += `<td>${formatNumber(item.ind_netprps)}</td>`;
+              tableHTML += `<td>${formatNumber(item.frgn)}</td>`;
+              tableHTML += `<td>${item.crd_remn_rt || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.prm)}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          selectedStockCode = target.dataset.code;
+          stockQueryInput.value = target.textContent; // Show selected stock
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      submitBtn.addEventListener('click', fetchAndDisplayDailyTradingDetails);
     }
   });
 });
