@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10002', name: '주식거래원요청' },
           { id: 'ka10004', name: '주식호가요청' },
           { id: 'ka10005', name: '주식일주월시분요청' },
-          { id: 'ka10006', name: '주식시분요청' }
+          { id: 'ka10006', name: '주식시분요청' },
+          { id: 'ka10007', name: '시세표성정보요청' }
         ];
 
         if (menu) {
@@ -654,6 +655,180 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayStockMinuteData(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10007') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>시세표성정보요청 (ka10007)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10007">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10007" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10007" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="market-price-info-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10007') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10007') as HTMLDivElement;
+      const resultDiv = document.getElementById('market-price-info-result') as HTMLDivElement;
+
+      const fetchAndDisplayMarketPriceInfo = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching market price information...';
+        try {
+          const result = await window.electronAPI.invoke('get-market-price-info', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const info = result.info;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            let htmlContent = '<table class="market-info-table"><tbody>';
+
+            const mainFields = {
+              stk_nm: '종목명',
+              stk_cd: '종목코드',
+              date: '날짜',
+              tm: '시간',
+              pred_close_pric: '전일종가',
+              pred_trde_qty: '전일거래량',
+              upl_pric: '상한가',
+              lst_pric: '하한가',
+              pred_trde_prica: '전일거래대금',
+              flo_stkcnt: '상장주식수',
+              cur_prc: '현재가',
+              smbol: '부호',
+              flu_rt: '등락률',
+              pred_rt: '전일비',
+              open_pric: '시가',
+              high_pric: '고가',
+              low_pric: '저가',
+              cntr_qty: '체결량',
+              trde_qty: '거래량',
+              trde_prica: '거래대금',
+              exp_cntr_pric: '예상체결가',
+              exp_cntr_qty: '예상체결량',
+              exp_sel_pri_bid: '예상매도우선호가',
+              exp_buy_pri_bid: '예상매수우선호가',
+              trde_strt_dt: '거래시작일',
+              exec_pric: '행사가격',
+              hgst_pric: '최고가',
+              lwst_pric: '최저가',
+              hgst_pric_dt: '최고가일',
+              lwst_pric_dt: '최저가일',
+            };
+
+            const keys = Object.keys(mainFields);
+            for (let i = 0; i < keys.length; i += 2) {
+              const key1 = keys[i];
+              const key2 = keys[i + 1];
+
+              const value1 = info[key1];
+              const value2 = info[key2];
+
+              let formattedValue1 = value1;
+              if (key1.endsWith('_dt') || key1 === 'date') {
+                formattedValue1 = formatDate(value1);
+              } else if (key1 === 'flu_rt' || key1 === 'pred_rt' || key1 === 'smbol') {
+                // These are already strings with percentage or symbols
+              } else {
+                formattedValue1 = formatNumber(value1);
+              }
+
+              let formattedValue2 = value2;
+              if (key2 && (key2.endsWith('_dt') || key2 === 'date')) {
+                formattedValue2 = formatDate(value2);
+              } else if (key2 && (key2 === 'flu_rt' || key2 === 'pred_rt' || key2 === 'smbol')) {
+                // These are already strings with percentage or symbols
+              } else if (key2) {
+                formattedValue2 = formatNumber(value2);
+              }
+
+              htmlContent += '<tr>';
+              htmlContent += `<td><strong>${mainFields[key1]}</strong></td><td>${formattedValue1}</td>`;
+              if (key2) {
+                htmlContent += `<td><strong>${mainFields[key2]}</strong></td><td>${formattedValue2}</td>`;
+              } else {
+                htmlContent += '<td></td><td></td>'; // Empty cells for alignment
+              }
+              htmlContent += '</tr>';
+            }
+            htmlContent += '</tbody></table><hr>';
+
+            // Bid/Ask prices and quantities
+            htmlContent += '<h2>호가 정보</h2>';
+            htmlContent += '<table class="bid-ask-table"><thead><tr><th>매도호가잔량</th><th>매도호가</th><th></th><th>매수호가</th><th>매수호가잔량</th></tr></thead><tbody>';
+
+            for (let i = 10; i >= 1; i--) {
+              const selBidReq = formatNumber(info[`sel_${i}bid_req`] || '0');
+              const selBid = formatNumber(info[`sel_${i}bid`] || '0');
+              const buyBid = formatNumber(info[`buy_${i}bid`] || '0');
+              const buyBidReq = formatNumber(info[`buy_${i}bid_req`] || '0');
+              htmlContent += `<tr><td>${selBidReq}</td><td>${selBid}</td><td></td><td>${buyBid}</td><td>${buyBidReq}</td></tr>`;
+            }
+
+            htmlContent += '</tbody></table><hr>';
+
+            // Total bid/ask quantities and counts
+            htmlContent += '<div class="total-bid-ask">';
+            htmlContent += `<div><strong>총매도잔량</strong>: ${formatNumber(info.tot_sel_req || '0')}</div>`;
+            htmlContent += `<div><strong>총매수잔량</strong>: ${formatNumber(info.tot_buy_req || '0')}</div>`;
+            htmlContent += `<div><strong>총매도건수</strong>: ${formatNumber(info.tot_sel_cnt || '0')}</div>`;
+            htmlContent += `<div><strong>총매수건수</strong>: ${formatNumber(info.tot_buy_cnt || '0')}</div>`;
+            htmlContent += '</div>';
+
+            resultDiv.innerHTML = htmlContent;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayMarketPriceInfo(stockCode);
         }
       });
     }
