@@ -1,6 +1,9 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -14,6 +17,8 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true, // Enable context isolation
+      nodeIntegration: false, // Disable Node.js integration
     },
   });
 
@@ -26,6 +31,14 @@ const createWindow = () => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  // Send environment variables to the renderer process
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('env-vars', {
+      appkey: process.env.APPKEY,
+      secretkey: process.env.SECRETKEY,
+    });
+  });
 };
 
 // This method will be called when Electron has finished
@@ -50,5 +63,37 @@ app.on('activate', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+// IPC handler for login
+ipcMain.handle('login', async (event, { appkey, secretkey }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/oauth2/token'; // From au10001_접근토큰_발급.md
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'au10001',
+      },
+      body: JSON.stringify({
+        grant_type: 'client_credentials',
+        appkey: appkey || process.env.APPKEY,
+        secretkey: secretkey || process.env.SECRETKEY,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Store the token securely (e.g., in memory for this example)
+      // In a real application, you might want to use electron-store or similar for persistence
+      console.log('Access Token:', data.token);
+      return { success: true, token: data.token };
+    } else {
+      console.error('Login failed:', data);
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    return { success: false, message: error.message };
+  }
+});

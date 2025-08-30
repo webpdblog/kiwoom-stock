@@ -1,31 +1,46 @@
-/**
- * This file will automatically be loaded by vite and run in the "renderer" context.
- * To learn more about the differences between the "main" and the "renderer" context in
- * Electron, visit:
- *
- * https://electronjs.org/docs/tutorial/process-model
- *
- * By default, Node.js integration in this file is disabled. When enabling Node.js integration
- * in a renderer process, please be aware of potential security implications. You can read
- * more about security risks here:
- *
- * https://electronjs.org/docs/tutorial/security
- *
- * To enable Node.js integration in this file, open up `main.ts` and enable the `nodeIntegration`
- * flag:
- *
- * ```
- *  // Create the browser window.
- *  mainWindow = new BrowserWindow({
- *    width: 800,
- *    height: 600,
- *    webPreferences: {
- *      nodeIntegration: true
- *    }
- *  });
- * ```
- */
-
 import './index.css';
 
-console.log('👋 This message is being logged by "renderer.ts", included via Vite');
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('login-form') as HTMLFormElement;
+  const appkeyInput = document.getElementById('appkey') as HTMLInputElement;
+  const secretkeyInput = document.getElementById('secretkey') as HTMLInputElement;
+  const messageDiv = document.getElementById('message') as HTMLDivElement;
+
+  // Listen for environment variables from the main process
+  window.electronAPI.on('env-vars', (envVars: { appkey: string; secretkey: string }) => {
+    if (envVars.appkey) {
+      appkeyInput.value = envVars.appkey;
+    }
+    if (envVars.secretkey) {
+      secretkeyInput.value = envVars.secretkey;
+    }
+  });
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const appkey = appkeyInput.value;
+    const secretkey = secretkeyInput.value;
+
+    messageDiv.textContent = 'Logging in...';
+    messageDiv.style.color = 'blue';
+
+    try {
+      const result = await window.electronAPI.invoke('login', { appkey, secretkey });
+      if (result.success) {
+        messageDiv.textContent = 'Login successful!';
+        messageDiv.style.color = 'green';
+        // Optionally, hide login form and show main app content
+        document.getElementById('login-container').style.display = 'none';
+        // You might want to load a new HTML file or show different content here
+        document.body.innerHTML += '<h1 style="text-align: center; margin-top: 50px;">Welcome to Kiwoom Stock App!</h1>';
+      } else {
+        messageDiv.textContent = `Login failed: ${result.message}`;
+        messageDiv.style.color = 'red';
+      }
+    } catch (error) {
+      messageDiv.textContent = `An error occurred: ${error.message}`;
+      messageDiv.style.color = 'red';
+    }
+  });
+});
