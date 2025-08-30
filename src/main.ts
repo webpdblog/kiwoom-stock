@@ -284,3 +284,54 @@ ipcMain.handle('get-stock-info', async (event, { query, token }) => {
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting trading members
+ipcMain.handle('get-trading-members', async (event, { code, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10002',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        stk_cd: code,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      const sell = [];
+      const buy = [];
+
+      for (let i = 1; i <= 5; i++) {
+        if (data[`sel_trde_ori_nm_${i}`]) {
+          sell.push({
+            member: data[`sel_trde_ori_nm_${i}`],
+            volume: parseInt(data[`sel_trde_qty_${i}`] || '0').toLocaleString(),
+          });
+        }
+        if (data[`buy_trde_ori_nm_${i}`]) {
+          buy.push({
+            member: data[`buy_trde_ori_nm_${i}`],
+            volume: parseInt(data[`buy_trde_qty_${i}`] || '0').toLocaleString(),
+          });
+        }
+      }
+      
+      // The ka10002 API does not provide a specific field for "외국계추정합".
+      // This needs to be calculated separately if required.
+
+      return { success: true, data: { sell, buy } };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

@@ -44,7 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const menuItems = [
           { id: 'au10002', name: '접근토큰 폐기' },
           { id: 'ka10099', name: '종목정보 리스트' },
-          { id: 'ka10001', name: '주식기본정보요청' }
+          { id: 'ka10001', name: '주식기본정보요청' },
+          { id: 'ka10002', name: '주식거래원요청' }
         ];
 
         if (menu) {
@@ -253,6 +254,85 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayStockInfo(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10002') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>주식거래원요청 (ka10002)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10002">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10002" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10002" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="trading-members-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10002') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10002') as HTMLDivElement;
+      const resultDiv = document.getElementById('trading-members-result') as HTMLDivElement;
+
+      const fetchAndDisplayTradingMembers = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching trading members...';
+        try {
+          const result = await window.electronAPI.invoke('get-trading-members', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const { sell, buy, total } = result.data;
+            let tableHTML = '<h2>매도 상위</h2><table><thead><tr><th>순위</th><th>회원사명</th><th>매도량</th></tr></thead><tbody>';
+            sell.forEach((item: any, index: number) => {
+              tableHTML += `<tr><td>${index + 1}</td><td>${item.member}</td><td>${item.volume}</td></tr>`;
+            });
+            tableHTML += '</tbody></table>';
+
+            tableHTML += '<h2>매수 상위</h2><table><thead><tr><th>순위</th><th>회원사명</th><th>매수량</th></tr></thead><tbody>';
+            buy.forEach((item: any, index: number) => {
+              tableHTML += `<tr><td>${index + 1}</td><td>${item.member}</td><td>${item.volume}</td></tr>`;
+            });
+            tableHTML += '</tbody></table>';
+            
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayTradingMembers(stockCode);
         }
       });
     }
