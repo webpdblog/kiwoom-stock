@@ -45,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'au10002', name: '접근토큰 폐기' },
           { id: 'ka10099', name: '종목정보 리스트' },
           { id: 'ka10001', name: '주식기본정보요청' },
-          { id: 'ka10002', name: '주식거래원요청' }
+          { id: 'ka10002', name: '주식거래원요청' },
+          { id: 'ka10004', name: '주식호가요청' }
         ];
 
         if (menu) {
@@ -333,6 +334,103 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayTradingMembers(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10004') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>주식호가요청 (ka10004)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10004">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10004" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10004" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="stock-quote-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10004') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10004') as HTMLDivElement;
+      const resultDiv = document.getElementById('stock-quote-result') as HTMLDivElement;
+
+      const fetchAndDisplayStockQuotes = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching stock quotes...';
+        try {
+          const result = await window.electronAPI.invoke('get-stock-quotes', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const quote = result.quote;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+            let tableHTML = '<table class="stock-quote-table"><thead><tr><th>매도잔량</th><th>매도호가</th><th></th><th>매수호가</th><th>매수잔량</th></tr></thead><tbody>';
+
+            // Sell quotes (10th to 1st)
+            for (let i = 10; i >= 1; i--) {
+              const sellReq = formatNumber(quote[`sel_${i}th_pre_req`] || '0');
+              const sellBid = formatNumber(quote[`sel_${i}th_pre_bid`] || '0');
+              tableHTML += `<tr><td>${sellReq}</td><td>${sellBid}</td><td></td><td></td><td></td></tr>`;
+            }
+
+            // Best sell and buy quotes
+            tableHTML += `<tr><td>${formatNumber(quote.sel_fpr_req || '0')}</td><td>${formatNumber(quote.sel_fpr_bid || '0')}</td><td>현재가</td><td>${formatNumber(quote.buy_fpr_bid || '0')}</td><td>${formatNumber(quote.buy_fpr_req || '0')}</td></tr>`;
+
+            // Buy quotes (1st to 10th)
+            for (let i = 1; i <= 10; i++) {
+              const buyReq = formatNumber(quote[`buy_${i}th_pre_req`] || '0');
+              const buyBid = formatNumber(quote[`buy_${i}th_pre_bid`] || '0');
+              tableHTML += `<tr><td></td><td></td><td></td><td>${buyBid}</td><td>${buyReq}</td></tr>`;
+            }
+
+            tableHTML += `<tr><td colspan="2">총매도잔량: ${formatNumber(quote.tot_sel_req || '0')}</td><td></td><td colspan="2">총매수잔량: ${formatNumber(quote.tot_buy_req || '0')}</td></tr>`;
+            tableHTML += `<tr><td colspan="2">시간외매도잔량: ${formatNumber(quote.ovt_sel_req || '0')}</td><td></td><td colspan="2">시간외매수잔량: ${formatNumber(quote.ovt_buy_req || '0')}</td></tr>`;
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayStockQuotes(stockCode);
         }
       });
     }
