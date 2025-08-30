@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10007', name: '시세표성정보요청' },
           { id: 'ka10008', name: '주식외국인종목별매매동향' },
           { id: 'ka10009', name: '주식기관요청' },
-          { id: 'ka10010', name: '업종프로그램요청' }
+          { id: 'ka10010', name: '업종프로그램요청' },
+          { id: 'ka10011', name: '신주인수권전체시세요청' }
         ];
 
         if (menu) {
@@ -1152,6 +1153,106 @@ document.addEventListener('DOMContentLoaded', () => {
           fetchAndDisplaySectorProgramData(stockCode);
         }
       });
+    } else if (actionId === 'ka10011') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>신주인수권전체시세요청 (ka10011)</h1>
+        <div class="input-group">
+          <label for="rights-type-select">신주인수권구분:</label>
+          <select id="rights-type-select" name="rights-type">
+            <option value="00">전체</option>
+            <option value="05">신주인수권증권</option>
+            <option value="07">신주인수권증서</option>
+          </select>
+          <button id="rights-submit-btn">조회</button>
+        </div>
+        <div id="rights-offering-result"></div>
+      `;
+
+      const rightsTypeSelect = document.getElementById('rights-type-select') as HTMLSelectElement;
+      const submitBtn = document.getElementById('rights-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('rights-offering-result') as HTMLDivElement;
+
+      const fetchAndDisplayRightsOfferingData = async () => {
+        const selectedType = rightsTypeSelect.value;
+        resultDiv.innerHTML = 'Fetching rights offering data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-rights-offering-data', {
+            type: selectedType,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const rightsData = result.rightsData;
+            
+            if (!rightsData || rightsData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '-0' || value === '0') return '0';
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (sign: string) => {
+              switch (sign) {
+                case '1': return '▲';
+                case '2': return '▲';
+                case '4': return '▼';
+                case '5': return '▼';
+                case '3':
+                default: return '-';
+              }
+            };
+
+            let tableHTML = '<table class="rights-offering-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목명', '현재가', '대비기호', '전일대비', '등락율',
+              '최우선매도호가', '최우선매수호가', '누적거래량', '시가', '고가', '저가'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            rightsData.forEach((item: any) => {
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd}</td>`;
+              tableHTML += `<td>${item.stk_nm}</td>`;
+              tableHTML += `<td>${formatNumber(item.cur_prc)}</td>`;
+              tableHTML += `<td>${signSymbol}</td>`;
+              tableHTML += `<td>${formatNumber(item.pred_pre)}</td>`;
+              tableHTML += `<td>${item.flu_rt}%</td>`;
+              tableHTML += `<td>${formatNumber(item.fpr_sel_bid)}</td>`;
+              tableHTML += `<td>${formatNumber(item.fpr_buy_bid)}</td>`;
+              tableHTML += `<td>${formatNumber(item.acc_trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.open_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.high_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.low_pric)}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayRightsOfferingData);
+      
+      // Auto-load data on page load with default selection
+      fetchAndDisplayRightsOfferingData();
     }
   });
 });
