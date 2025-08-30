@@ -46,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10099', name: '종목정보 리스트' },
           { id: 'ka10001', name: '주식기본정보요청' },
           { id: 'ka10002', name: '주식거래원요청' },
-          { id: 'ka10004', name: '주식호가요청' }
+          { id: 'ka10004', name: '주식호가요청' },
+          { id: 'ka10005', name: '주식일주월시분요청' }
         ];
 
         if (menu) {
@@ -431,6 +432,117 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayStockQuotes(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10005') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>주식일주월시분요청 (ka10005)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10005">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10005" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10005" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="stock-history-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10005') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10005') as HTMLDivElement;
+      const resultDiv = document.getElementById('stock-history-result') as HTMLDivElement;
+
+      const fetchAndDisplayStockHistory = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching stock history...';
+        try {
+          const result = await window.electronAPI.invoke('get-stock-history', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const history = result.history;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            let tableHTML = '<table class="stock-history-table"><thead><tr>';
+            const headers = [
+              '날짜', '시가', '고가', '저가', '종가', '대비', '등락률', '거래량', '거래대금',
+              '외인보유', '외인비중', '외인순매수', '기관순매수', '개인순매수', '신용잔고율', '외국계', '프로그램'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            history.forEach((item: any) => {
+              tableHTML += '<tr>';
+              tableHTML += `<td>${formatDate(item.date)}</td>`;
+              tableHTML += `<td>${formatNumber(item.open_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.high_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.low_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.close_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.pre)}</td>`;
+              tableHTML += `<td>${item.flu_rt}</td>`; // flu_rt is a string with percentage
+              tableHTML += `<td>${formatNumber(item.trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_prica)}</td>`;
+              tableHTML += `<td>${formatNumber(item.for_poss)}</td>`;
+              tableHTML += `<td>${item.for_wght}</td>`; // for_wght is a string with percentage
+              tableHTML += `<td>${formatNumber(item.for_netprps)}</td>`;
+              tableHTML += `<td>${formatNumber(item.orgn_netprps)}</td>`;
+              tableHTML += `<td>${formatNumber(item.ind_netprps)}</td>`;
+              tableHTML += `<td>${item.crd_remn_rt}</td>`; // crd_remn_rt is a string with percentage
+              tableHTML += `<td>${formatNumber(item.frgn)}</td>`;
+              tableHTML += `<td>${formatNumber(item.prm)}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayStockHistory(stockCode);
         }
       });
     }
