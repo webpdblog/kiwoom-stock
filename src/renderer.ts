@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10004', name: '주식호가요청' },
           { id: 'ka10005', name: '주식일주월시분요청' },
           { id: 'ka10006', name: '주식시분요청' },
-          { id: 'ka10007', name: '시세표성정보요청' }
+          { id: 'ka10007', name: '시세표성정보요청' },
+          { id: 'ka10008', name: '주식외국인종목별매매동향' }
         ];
 
         if (menu) {
@@ -829,6 +830,111 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayMarketPriceInfo(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10008') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>주식외국인종목별매매동향 (ka10008)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10008">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10008" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10008" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="foreign-trading-trend-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10008') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10008') as HTMLDivElement;
+      const resultDiv = document.getElementById('foreign-trading-trend-result') as HTMLDivElement;
+
+      const fetchAndDisplayForeignTradingTrend = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching foreign trading trend...';
+        try {
+          const result = await window.electronAPI.invoke('get-foreign-trading-trend', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const trendData = result.trendData;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            let tableHTML = '<table class="foreign-trading-trend-table"><thead><tr>';
+            const headers = [
+              '일자', '종가', '전일대비', '거래량', '변동수량', '보유주식수', '비중',
+              '취득가능주식수', '외국인한도', '외국인한도증감', '한도소진률'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            trendData.forEach((item: any) => {
+              tableHTML += '<tr>';
+              tableHTML += `<td>${formatDate(item.dt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.close_pric)}</td>`;
+              tableHTML += `<td>${formatNumber(item.pred_pre)}</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.chg_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.poss_stkcnt)}</td>`;
+              tableHTML += `<td>${item.wght}</td>`; // wght is a string with percentage
+              tableHTML += `<td>${formatNumber(item.gain_pos_stkcnt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.frgnr_limit)}</td>`;
+              tableHTML += `<td>${formatNumber(item.frgnr_limit_irds)}</td>`;
+              tableHTML += `<td>${item.limit_exh_rt}</td>`; // limit_exh_rt is a string with percentage
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplayForeignTradingTrend(stockCode);
         }
       });
     }
