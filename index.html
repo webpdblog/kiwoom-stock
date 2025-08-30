@@ -264,6 +264,95 @@
             </div>
             <div id="ka10016-result"></div>
           </div>
+
+          <div id="ka10017-content" class="api-content" style="display: none;">
+            <h2>상하한가요청 (ka10017)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10017">시장구분:</label>
+              <select id="market_type_ka10017" name="market_type_ka10017">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="updown_type_ka10017">상하한구분:</label>
+              <select id="updown_type_ka10017" name="updown_type_ka10017">
+                <option value="1">상한</option>
+                <option value="2">상승</option>
+                <option value="3">보합</option>
+                <option value="4">하한</option>
+                <option value="5">하락</option>
+                <option value="6">전일상한</option>
+                <option value="7">전일하한</option>
+              </select>
+              
+              <label for="sort_type_ka10017">정렬구분:</label>
+              <select id="sort_type_ka10017" name="sort_type_ka10017">
+                <option value="1">종목코드순</option>
+                <option value="2">연속횟수순(상위100개)</option>
+                <option value="3">등락률순</option>
+              </select>
+              
+              <label for="stock_condition_ka10017">종목조건:</label>
+              <select id="stock_condition_ka10017" name="stock_condition_ka10017">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="4">우선주+관리종목제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+                <option value="9">증20만보기</option>
+                <option value="10">우선주+관리종목+환기종목제외</option>
+              </select>
+              
+              <label for="trade_qty_type_ka10017">거래량구분:</label>
+              <select id="trade_qty_type_ka10017" name="trade_qty_type_ka10017">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+              
+              <label for="credit_condition_ka10017">신용조건:</label>
+              <select id="credit_condition_ka10017" name="credit_condition_ka10017">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+              
+              <label for="trade_gold_type_ka10017">매매금구분:</label>
+              <select id="trade_gold_type_ka10017" name="trade_gold_type_ka10017">
+                <option value="0">전체조회</option>
+                <option value="1">1천원미만</option>
+                <option value="2">1천원~2천원</option>
+                <option value="3">2천원~3천원</option>
+                <option value="4">5천원~1만원</option>
+                <option value="5">1만원이상</option>
+                <option value="8">1천원이상</option>
+              </select>
+              
+              <label for="exchange_type_ka10017">거래소구분:</label>
+              <select id="exchange_type_ka10017" name="exchange_type_ka10017">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10017-submit">조회</button>
+            </div>
+            <div id="ka10017-result"></div>
+          </div>
         </div>
       </div>
     </div>

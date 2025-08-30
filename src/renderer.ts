@@ -57,7 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10013', name: '신용매매동향요청' },
           { id: 'ka10014', name: '공매도추이요청' },
           { id: 'ka10015', name: '일별거래상세요청' },
-          { id: 'ka10016', name: '신고저가요청' }
+          { id: 'ka10016', name: '신고저가요청' },
+          { id: 'ka10017', name: '상하한가요청' }
         ];
 
         if (apiSelector) {
@@ -1945,6 +1946,228 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       submitBtn.addEventListener('click', fetchAndDisplayNewHighLowData);
+    } else if (actionId === 'ka10017') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>상하한가요청 (ka10017)</h1>
+        <div class="horizontal-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="market-type-input-ka10017">시장구분:</label>
+              <select id="market-type-input-ka10017" name="market-type">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="updown-type-input-ka10017">상하한구분:</label>
+              <select id="updown-type-input-ka10017" name="updown-type">
+                <option value="1">상한</option>
+                <option value="2">상승</option>
+                <option value="3">보합</option>
+                <option value="4">하한</option>
+                <option value="5">하락</option>
+                <option value="6">전일상한</option>
+                <option value="7">전일하한</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="sort-type-input-ka10017">정렬구분:</label>
+              <select id="sort-type-input-ka10017" name="sort-type">
+                <option value="1">종목코드순</option>
+                <option value="2">연속횟수순(상위100개)</option>
+                <option value="3">등락률순</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="stock-condition-input-ka10017">종목조건:</label>
+              <select id="stock-condition-input-ka10017" name="stock-condition">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="4">우선주+관리종목제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+                <option value="9">증20만보기</option>
+                <option value="10">우선주+관리종목+환기종목제외</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="trade-qty-type-input-ka10017">거래량구분:</label>
+              <select id="trade-qty-type-input-ka10017" name="trade-qty-type">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="credit-condition-input-ka10017">신용조건:</label>
+              <select id="credit-condition-input-ka10017" name="credit-condition">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="trade-gold-type-input-ka10017">매매금구분:</label>
+              <select id="trade-gold-type-input-ka10017" name="trade-gold-type">
+                <option value="0">전체조회</option>
+                <option value="1">1천원미만</option>
+                <option value="2">1천원~2천원</option>
+                <option value="3">2천원~3천원</option>
+                <option value="4">5천원~1만원</option>
+                <option value="5">1만원이상</option>
+                <option value="8">1천원이상</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="exchange-type-input-ka10017">거래소구분:</label>
+              <select id="exchange-type-input-ka10017" name="exchange-type">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <button id="upper-lower-limit-submit-btn">조회</button>
+          </div>
+        </div>
+        <div id="upper-lower-limit-result"></div>
+      `;
+
+      const marketTypeInput = document.getElementById('market-type-input-ka10017') as HTMLSelectElement;
+      const upDownTypeInput = document.getElementById('updown-type-input-ka10017') as HTMLSelectElement;
+      const sortTypeInput = document.getElementById('sort-type-input-ka10017') as HTMLSelectElement;
+      const stockConditionInput = document.getElementById('stock-condition-input-ka10017') as HTMLSelectElement;
+      const tradeQtyTypeInput = document.getElementById('trade-qty-type-input-ka10017') as HTMLSelectElement;
+      const creditConditionInput = document.getElementById('credit-condition-input-ka10017') as HTMLSelectElement;
+      const tradeGoldTypeInput = document.getElementById('trade-gold-type-input-ka10017') as HTMLSelectElement;
+      const exchangeTypeInput = document.getElementById('exchange-type-input-ka10017') as HTMLSelectElement;
+      const submitBtn = document.getElementById('upper-lower-limit-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('upper-lower-limit-result') as HTMLDivElement;
+
+      const fetchAndDisplayUpperLowerLimitData = async () => {
+        resultDiv.innerHTML = 'Fetching upper/lower limit price data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-upper-lower-limit-data', {
+            marketType: marketTypeInput.value,
+            upDownType: upDownTypeInput.value,
+            sortType: sortTypeInput.value,
+            stockCondition: stockConditionInput.value,
+            tradeQtyType: tradeQtyTypeInput.value,
+            creditCondition: creditConditionInput.value,
+            tradeGoldType: tradeGoldTypeInput.value,
+            exchangeType: exchangeTypeInput.value,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const upperLowerLimitData = result.upperLowerLimitData;
+            
+            if (!upperLowerLimitData || upperLowerLimitData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (signCode: string) => {
+              switch(signCode) {
+                case '1': return '△';
+                case '2': return '▲';
+                case '3': return '-';
+                case '4': return '▼';
+                case '5': return '▽';
+                default: return '';
+              }
+            };
+
+            let tableHTML = '<table class="upper-lower-limit-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목정보', '종목명', '현재가', '전일대비', '등락률', '거래량', 
+              '전일거래량', '매도잔량', '매도호가', '매수호가', '매수잔량', '횟수'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            upperLowerLimitData.forEach((item: any) => {
+              const currentPrice = formatNumber(item.cur_prc || '0');
+              const previousDiff = formatNumber(item.pred_pre || '0');
+              const changeRate = item.flu_rt || '0';
+              const volume = formatNumber(item.trde_qty || '0');
+              const prevVolume = formatNumber(item.pred_trde_qty || '0');
+              const sellReq = formatNumber(item.sel_req || '0');
+              const sellBid = formatNumber(item.sel_bid || '0');
+              const buyBid = formatNumber(item.buy_bid || '0');
+              const buyReq = formatNumber(item.buy_req || '0');
+              const count = item.cnt || '0';
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd || ''}</td>`;
+              tableHTML += `<td>${item.stk_infr || ''}</td>`;
+              tableHTML += `<td>${item.stk_nm || ''}</td>`;
+              tableHTML += `<td>${currentPrice}</td>`;
+              tableHTML += `<td>${signSymbol}${previousDiff}</td>`;
+              tableHTML += `<td>${changeRate}%</td>`;
+              tableHTML += `<td>${volume}</td>`;
+              tableHTML += `<td>${prevVolume}</td>`;
+              tableHTML += `<td>${sellReq}</td>`;
+              tableHTML += `<td>${sellBid}</td>`;
+              tableHTML += `<td>${buyBid}</td>`;
+              tableHTML += `<td>${buyReq}</td>`;
+              tableHTML += `<td>${count}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayUpperLowerLimitData);
     }
   });
 });
