@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10006', name: '주식시분요청' },
           { id: 'ka10007', name: '시세표성정보요청' },
           { id: 'ka10008', name: '주식외국인종목별매매동향' },
-          { id: 'ka10009', name: '주식기관요청' }
+          { id: 'ka10009', name: '주식기관요청' },
+          { id: 'ka10010', name: '업종프로그램요청' }
         ];
 
         if (menu) {
@@ -1043,6 +1044,112 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionsContainer.innerHTML = '';
           suggestionsContainer.style.display = 'none';
           fetchAndDisplayInstitutionTradingData(stockCode);
+        }
+      });
+    } else if (actionId === 'ka10010') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>업종프로그램요청 (ka10010)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10010">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10010" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10010" class="autocomplete-suggestions"></div>
+        </div>
+        <div id="sector-program-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10010') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10010') as HTMLDivElement;
+      const resultDiv = document.getElementById('sector-program-result') as HTMLDivElement;
+
+      const fetchAndDisplaySectorProgramData = async (code: string) => {
+        resultDiv.innerHTML = 'Fetching sector program data...';
+        try {
+          const result = await window.electronAPI.invoke('get-sector-program-data', {
+            code: code,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const programData = result.programData;
+            const formatNumber = (value: string) => {
+              const num = Number(value);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value || '0';
+            };
+
+            let tableHTML = '<table class="sector-program-table"><tbody>';
+            const fields = {
+              dfrt_trst_sell_qty: '차익위탁매도수량',
+              dfrt_trst_sell_amt: '차익위탁매도금액', 
+              dfrt_trst_buy_qty: '차익위탁매수수량',
+              dfrt_trst_buy_amt: '차익위탁매수금액',
+              dfrt_trst_netprps_qty: '차익위탁순매수수량',
+              dfrt_trst_netprps_amt: '차익위탁순매수금액',
+              ndiffpro_trst_sell_qty: '비차익위탁매도수량',
+              ndiffpro_trst_sell_amt: '비차익위탁매도금액',
+              ndiffpro_trst_buy_qty: '비차익위탁매수수량',
+              ndiffpro_trst_buy_amt: '비차익위탁매수금액',
+              ndiffpro_trst_netprps_qty: '비차익위탁순매수수량',
+              ndiffpro_trst_netprps_amt: '비차익위탁순매수금액',
+              all_dfrt_trst_sell_qty: '전체차익위탁매도수량',
+              all_dfrt_trst_sell_amt: '전체차익위탁매도금액',
+              all_dfrt_trst_buy_qty: '전체차익위탁매수수량',
+              all_dfrt_trst_buy_amt: '전체차익위탁매수금액',
+              all_dfrt_trst_netprps_qty: '전체차익위탁순매수수량',
+              all_dfrt_trst_netprps_amt: '전체차익위탁순매수금액',
+            };
+
+            for (const key in fields) {
+              if (fields.hasOwnProperty(key)) {
+                const value = programData[key];
+                const formattedValue = formatNumber(value);
+                tableHTML += `<tr><td><strong>${fields[key]}</strong></td><td>${formattedValue}</td></tr>`;
+              }
+            }
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          const stockCode = target.dataset.code;
+          stockQueryInput.value = ''; // Clear input
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          fetchAndDisplaySectorProgramData(stockCode);
         }
       });
     }

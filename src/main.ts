@@ -515,3 +515,33 @@ ipcMain.handle('get-institution-trading-data', async (event, { code, token }) =>
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting sector program trading data
+ipcMain.handle('get-sector-program-data', async (event, { code, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/sect';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10010',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        stk_cd: code,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, programData: data };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});
