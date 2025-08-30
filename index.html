@@ -6,8 +6,21 @@
 
   </head>
   <body>
-    <h1>💖 Hello World!</h1>
-    <p>Welcome to your Electron application.</p>
+    <div id="login-container">
+      <h2>Kiwoom Stock Login</h2>
+      <form id="login-form">
+        <div class="input-group">
+          <label for="appkey">App Key:</label>
+          <input type="text" id="appkey" name="appkey" required>
+        </div>
+        <div class="input-group">
+          <label for="secretkey">Secret Key:</label>
+          <input type="password" id="secretkey" name="secretkey" required>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      <div id="message"></div>
+    </div>
     <script type="module" src="/src/renderer.ts"></script>
   </body>
 </html>
