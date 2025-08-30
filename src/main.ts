@@ -66,8 +66,8 @@ const createWindow = () => {
   // Send environment variables to the renderer process
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('env-vars', {
-      appkey: process.env.APPKEY,
-      secretkey: process.env.SECRETKEY,
+      appkey: process.env.APP_KEY,
+      secretkey: process.env.SECRET_KEY,
     });
   });
 };
@@ -110,8 +110,8 @@ ipcMain.handle('login', async (event, { appkey, secretkey }) => {
       },
       body: JSON.stringify({
         grant_type: 'client_credentials',
-        appkey: appkey || process.env.APPKEY,
-        secretkey: secretkey || process.env.SECRETKEY,
+        appkey: appkey || process.env.APP_KEY,
+        secretkey: secretkey || process.env.SECRET_KEY,
       }),
     });
 
@@ -145,8 +145,8 @@ ipcMain.handle('revoke-token', async (event, { appkey, secretkey, token }) => {
         'authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        appkey: appkey || process.env.APPKEY,
-        secretkey: secretkey || process.env.SECRETKEY,
+        appkey: appkey || process.env.APP_KEY,
+        secretkey: secretkey || process.env.SECRET_KEY,
         token: token,
       }),
     });
