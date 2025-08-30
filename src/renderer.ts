@@ -54,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10009', name: '주식기관요청' },
           { id: 'ka10010', name: '업종프로그램요청' },
           { id: 'ka10011', name: '신주인수권전체시세요청' },
-          { id: 'ka10013', name: '신용매매동향요청' }
+          { id: 'ka10013', name: '신용매매동향요청' },
+          { id: 'ka10014', name: '공매도추이요청' }
         ];
 
         if (menu) {
@@ -1407,6 +1408,165 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       submitBtn.addEventListener('click', fetchAndDisplayCreditTradingTrend);
+    } else if (actionId === 'ka10014') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>공매도추이요청 (ka10014)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10014">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10014" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10014" class="autocomplete-suggestions"></div>
+        </div>
+        <div class="input-group">
+          <label for="time-type-select-ka10014">시간구분:</label>
+          <select id="time-type-select-ka10014" name="time-type">
+            <option value="0">시작일</option>
+            <option value="1">기간</option>
+          </select>
+          <label for="start-date-input-ka10014">시작일자:</label>
+          <input type="date" id="start-date-input-ka10014" name="start-date" value="${new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]}">
+          <label for="end-date-input-ka10014">종료일자:</label>
+          <input type="date" id="end-date-input-ka10014" name="end-date" value="${new Date().toISOString().split('T')[0]}">
+          <button id="short-selling-submit-btn">조회</button>
+        </div>
+        <div id="short-selling-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10014') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10014') as HTMLDivElement;
+      const timeTypeSelect = document.getElementById('time-type-select-ka10014') as HTMLSelectElement;
+      const startDateInput = document.getElementById('start-date-input-ka10014') as HTMLInputElement;
+      const endDateInput = document.getElementById('end-date-input-ka10014') as HTMLInputElement;
+      const submitBtn = document.getElementById('short-selling-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('short-selling-result') as HTMLDivElement;
+
+      let selectedStockCode = '';
+
+      const fetchAndDisplayShortSellingTrend = async () => {
+        if (!selectedStockCode) {
+          resultDiv.innerHTML = '<p style="color: red;">종목을 먼저 선택해주세요.</p>';
+          return;
+        }
+
+        const selectedTimeType = timeTypeSelect.value;
+        const selectedStartDate = startDateInput.value.replace(/-/g, ''); // YYYYMMDD format
+        const selectedEndDate = endDateInput.value.replace(/-/g, ''); // YYYYMMDD format
+        
+        resultDiv.innerHTML = 'Fetching short selling trend...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-short-selling-trend', {
+            code: selectedStockCode,
+            timeType: selectedTimeType,
+            startDate: selectedStartDate,
+            endDate: selectedEndDate,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const shortSellingData = result.shortSellingData;
+            
+            if (!shortSellingData || shortSellingData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            const getSignSymbol = (sign: string) => {
+              switch (sign) {
+                case '1': return '▲';
+                case '2': return '▲';
+                case '4': return '▼';
+                case '5': return '▼';
+                case '0':
+                default: return '-';
+              }
+            };
+
+            const timeTypeText = selectedTimeType === '0' ? '시작일' : '기간';
+            let tableHTML = `<h3>공매도추이 (${timeTypeText})</h3>`;
+            tableHTML += '<table class="short-selling-table"><thead><tr>';
+            const headers = [
+              '일자', '종가', '대비기호', '전일대비', '등락율', '거래량', '공매도량', '누적공매도량', 
+              '매매비중', '공매도거래대금', '공매도평균가'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            shortSellingData.forEach((item: any) => {
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+              tableHTML += '<tr>';
+              tableHTML += `<td>${formatDate(item.dt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.close_pric)}</td>`;
+              tableHTML += `<td>${signSymbol}</td>`;
+              tableHTML += `<td>${formatNumber(item.pred_pre)}</td>`;
+              tableHTML += `<td>${item.flu_rt}%</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.shrts_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.ovr_shrts_qty)}</td>`;
+              tableHTML += `<td>${item.trde_wght || '-'}</td>`;
+              tableHTML += `<td>${formatNumber(item.shrts_trde_prica)}</td>`;
+              tableHTML += `<td>${formatNumber(item.shrts_avg_pric)}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          selectedStockCode = target.dataset.code;
+          stockQueryInput.value = target.textContent; // Show selected stock
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      submitBtn.addEventListener('click', fetchAndDisplayShortSellingTrend);
     }
   });
 });

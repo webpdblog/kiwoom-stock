@@ -607,3 +607,36 @@ ipcMain.handle('get-credit-trading-trend', async (event, { code, date, queryType
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting short selling trend data
+ipcMain.handle('get-short-selling-trend', async (event, { code, timeType, startDate, endDate, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/shsa';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10014',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        stk_cd: code,
+        tm_tp: timeType,
+        strt_dt: startDate,
+        end_dt: endDate,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, shortSellingData: data.shrts_trnsn || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});
