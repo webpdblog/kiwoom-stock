@@ -53,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10008', name: '주식외국인종목별매매동향' },
           { id: 'ka10009', name: '주식기관요청' },
           { id: 'ka10010', name: '업종프로그램요청' },
-          { id: 'ka10011', name: '신주인수권전체시세요청' }
+          { id: 'ka10011', name: '신주인수권전체시세요청' },
+          { id: 'ka10013', name: '신용매매동향요청' }
         ];
 
         if (menu) {
@@ -1253,6 +1254,159 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Auto-load data on page load with default selection
       fetchAndDisplayRightsOfferingData();
+    } else if (actionId === 'ka10013') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>신용매매동향요청 (ka10013)</h1>
+        <div class="input-group autocomplete-container">
+          <label for="stock-query-ka10013">Stock Name or Code:</label>
+          <input type="text" id="stock-query-ka10013" name="stock-query" placeholder="종목명 또는 코드를 입력하세요..." autocomplete="off">
+          <div id="autocomplete-suggestions-ka10013" class="autocomplete-suggestions"></div>
+        </div>
+        <div class="input-group">
+          <label for="date-input-ka10013">일자:</label>
+          <input type="date" id="date-input-ka10013" name="date" value="${new Date().toISOString().split('T')[0]}">
+          <label for="query-type-select-ka10013">조회구분:</label>
+          <select id="query-type-select-ka10013" name="query-type">
+            <option value="1">융자</option>
+            <option value="2">대주</option>
+          </select>
+          <button id="credit-submit-btn">조회</button>
+        </div>
+        <div id="credit-trading-result"></div>
+      `;
+
+      const stockQueryInput = document.getElementById('stock-query-ka10013') as HTMLInputElement;
+      const suggestionsContainer = document.getElementById('autocomplete-suggestions-ka10013') as HTMLDivElement;
+      const dateInput = document.getElementById('date-input-ka10013') as HTMLInputElement;
+      const queryTypeSelect = document.getElementById('query-type-select-ka10013') as HTMLSelectElement;
+      const submitBtn = document.getElementById('credit-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('credit-trading-result') as HTMLDivElement;
+
+      let selectedStockCode = '';
+
+      const fetchAndDisplayCreditTradingTrend = async () => {
+        if (!selectedStockCode) {
+          resultDiv.innerHTML = '<p style="color: red;">종목을 먼저 선택해주세요.</p>';
+          return;
+        }
+
+        const selectedDate = dateInput.value.replace(/-/g, ''); // YYYYMMDD format
+        const selectedQueryType = queryTypeSelect.value;
+        
+        resultDiv.innerHTML = 'Fetching credit trading trend...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-credit-trading-trend', {
+            code: selectedStockCode,
+            date: selectedDate,
+            queryType: selectedQueryType,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const trendData = result.trendData;
+            
+            if (!trendData || trendData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const num = Number(value.replace(/[+\-]/g, ''));
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const formatDate = (dateString: string) => {
+              if (!dateString || dateString.length !== 8) return dateString;
+              return `${dateString.substring(0, 4)}/${dateString.substring(4, 6)}/${dateString.substring(6, 8)}`;
+            };
+
+            const getSignSymbol = (sign: string) => {
+              switch (sign) {
+                case '1': return '▲';
+                case '2': return '▲';
+                case '4': return '▼';
+                case '5': return '▼';
+                case '0':
+                default: return '-';
+              }
+            };
+
+            const queryTypeText = selectedQueryType === '1' ? '융자' : '대주';
+            let tableHTML = `<h3>${queryTypeText} 신용매매동향</h3>`;
+            tableHTML += '<table class="credit-trading-table"><thead><tr>';
+            const headers = [
+              '일자', '현재가', '대비기호', '전일대비', '거래량', '신규', '상환', '잔고', '금액', '대비', '공여율', '잔고율'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            trendData.forEach((item: any) => {
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+              tableHTML += '<tr>';
+              tableHTML += `<td>${formatDate(item.dt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.cur_prc)}</td>`;
+              tableHTML += `<td>${signSymbol}</td>`;
+              tableHTML += `<td>${formatNumber(item.pred_pre)}</td>`;
+              tableHTML += `<td>${formatNumber(item.trde_qty)}</td>`;
+              tableHTML += `<td>${formatNumber(item.new)}</td>`;
+              tableHTML += `<td>${formatNumber(item.rpya)}</td>`;
+              tableHTML += `<td>${formatNumber(item.remn)}</td>`;
+              tableHTML += `<td>${formatNumber(item.amt)}</td>`;
+              tableHTML += `<td>${formatNumber(item.pre)}</td>`;
+              tableHTML += `<td>${item.shr_rt || '-'}</td>`;
+              tableHTML += `<td>${item.remn_rt || '-'}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      stockQueryInput.addEventListener('input', async () => {
+        const term = stockQueryInput.value;
+        if (term.length < 1) {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        const stocks = await window.electronAPI.invoke('search-stocks', { term });
+        if (stocks.length > 0) {
+          suggestionsContainer.innerHTML = stocks.map((s: {name: string, code: string}) => 
+            `<div class="suggestion-item" data-code="${s.code}">${s.name} (${s.code})</div>`
+          ).join('');
+          suggestionsContainer.style.display = 'block';
+        } else {
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      suggestionsContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLDivElement;
+        if (target.classList.contains('suggestion-item')) {
+          selectedStockCode = target.dataset.code;
+          stockQueryInput.value = target.textContent; // Show selected stock
+          suggestionsContainer.innerHTML = '';
+          suggestionsContainer.style.display = 'none';
+        }
+      });
+
+      submitBtn.addEventListener('click', fetchAndDisplayCreditTradingTrend);
     }
   });
 });
