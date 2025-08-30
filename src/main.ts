@@ -856,3 +856,39 @@ ipcMain.handle('get-bid-ask-volume-upper-data', async (event, { marketType, sort
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting bid/ask order volume surge data
+ipcMain.handle('get-bid-ask-volume-surge-data', async (event, { marketType, tradeType, sortType, timeType, tradeQtyType, stockCondition, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/rkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10021',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mrkt_tp: marketType,
+        trde_tp: tradeType,
+        sort_tp: sortType,
+        tm_tp: timeType,
+        trde_qty_tp: tradeQtyType,
+        stk_cnd: stockCondition,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, bidAskVolumeSurgeData: data.bid_req_sdnin || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

@@ -575,6 +575,62 @@
             </div>
             <div id="ka10020-result"></div>
           </div>
+
+          <div id="ka10021-content" class="api-content" style="display: none;">
+            <h2>호가잔량급증요청 (ka10021)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10021">시장구분:</label>
+              <select id="market_type_ka10021" name="market_type_ka10021">
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="trade_type_ka10021">매매구분:</label>
+              <select id="trade_type_ka10021" name="trade_type_ka10021">
+                <option value="1">매수잔량</option>
+                <option value="2">매도잔량</option>
+              </select>
+              
+              <label for="sort_type_ka10021">정렬구분:</label>
+              <select id="sort_type_ka10021" name="sort_type_ka10021">
+                <option value="1">급증량</option>
+                <option value="2">급증률</option>
+              </select>
+              
+              <label for="time_type_ka10021">시간구분(분):</label>
+              <input type="number" id="time_type_ka10021" name="time_type_ka10021" value="30" min="1" max="99" />
+              
+              <label for="trade_qty_type_ka10021">거래량구분:</label>
+              <select id="trade_qty_type_ka10021" name="trade_qty_type_ka10021">
+                <option value="1">천주이상</option>
+                <option value="5">5천주이상</option>
+                <option value="10">만주이상</option>
+                <option value="50">5만주이상</option>
+                <option value="100">10만주이상</option>
+              </select>
+              
+              <label for="stock_condition_ka10021">종목조건:</label>
+              <select id="stock_condition_ka10021" name="stock_condition_ka10021">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+                <option value="9">증20만보기</option>
+              </select>
+              
+              <label for="exchange_type_ka10021">거래소구분:</label>
+              <select id="exchange_type_ka10021" name="exchange_type_ka10021">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10021-submit">조회</button>
+            </div>
+            <div id="ka10021-result"></div>
+          </div>
         </div>
       </div>
     </div>
