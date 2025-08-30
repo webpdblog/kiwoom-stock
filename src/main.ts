@@ -746,3 +746,39 @@ ipcMain.handle('get-upper-lower-limit-data', async (event, { marketType, upDownT
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting high-low price approach data
+ipcMain.handle('get-high-low-approach-data', async (event, { highLowType, approachRate, marketType, tradeQtyType, stockCondition, creditCondition, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10018',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        high_low_tp: highLowType,
+        alacc_rt: approachRate,
+        mrkt_tp: marketType,
+        trde_qty_tp: tradeQtyType,
+        stk_cnd: stockCondition,
+        crd_cnd: creditCondition,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, highLowApproachData: data.high_low_pric_alacc || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

@@ -353,6 +353,79 @@
             </div>
             <div id="ka10017-result"></div>
           </div>
+
+          <div id="ka10018-content" class="api-content" style="display: none;">
+            <h2>고저가근접요청 (ka10018)</h2>
+            <div class="input-group">
+              <label for="high_low_type_ka10018">고저구분:</label>
+              <select id="high_low_type_ka10018" name="high_low_type_ka10018">
+                <option value="1">고가</option>
+                <option value="2">저가</option>
+              </select>
+              
+              <label for="approach_rate_ka10018">근접율:</label>
+              <select id="approach_rate_ka10018" name="approach_rate_ka10018">
+                <option value="05">0.5%</option>
+                <option value="10">1.0%</option>
+                <option value="15">1.5%</option>
+                <option value="20">2.0%</option>
+                <option value="25">2.5%</option>
+                <option value="30">3.0%</option>
+              </select>
+              
+              <label for="market_type_ka10018">시장구분:</label>
+              <select id="market_type_ka10018" name="market_type_ka10018">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="trade_qty_type_ka10018">거래량구분:</label>
+              <select id="trade_qty_type_ka10018" name="trade_qty_type_ka10018">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+              
+              <label for="stock_condition_ka10018">종목조건:</label>
+              <select id="stock_condition_ka10018" name="stock_condition_ka10018">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+              </select>
+              
+              <label for="credit_condition_ka10018">신용조건:</label>
+              <select id="credit_condition_ka10018" name="credit_condition_ka10018">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+              
+              <label for="exchange_type_ka10018">거래소구분:</label>
+              <select id="exchange_type_ka10018" name="exchange_type_ka10018">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10018-submit">조회</button>
+            </div>
+            <div id="ka10018-result"></div>
+          </div>
         </div>
       </div>
     </div>
