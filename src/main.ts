@@ -782,3 +782,42 @@ ipcMain.handle('get-high-low-approach-data', async (event, { highLowType, approa
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting price surge/plunge data
+ipcMain.handle('get-price-surge-plunge-data', async (event, { marketType, fluctuationType, timeType, time, tradeQtyType, stockCondition, creditCondition, priceCondition, upDownInclude, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10019',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mrkt_tp: marketType,
+        flu_tp: fluctuationType,
+        tm_tp: timeType,
+        tm: time,
+        trde_qty_tp: tradeQtyType,
+        stk_cnd: stockCondition,
+        crd_cnd: creditCondition,
+        pric_cnd: priceCondition,
+        updown_incls: upDownInclude,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, priceSurgePlungeData: data.pric_jmpflu || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

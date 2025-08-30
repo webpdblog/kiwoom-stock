@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10015', name: '일별거래상세요청' },
           { id: 'ka10016', name: '신고저가요청' },
           { id: 'ka10017', name: '상하한가요청' },
-          { id: 'ka10018', name: '고저가근접요청' }
+          { id: 'ka10018', name: '고저가근접요청' },
+          { id: 'ka10019', name: '가격급등락요청' }
         ];
 
         if (apiSelector) {
@@ -2366,6 +2367,231 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       submitBtn.addEventListener('click', fetchAndDisplayHighLowApproachData);
+    } else if (actionId === 'ka10019') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>가격급등락요청 (ka10019)</h1>
+        <div class="horizontal-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="market-type-input-ka10019">시장구분:</label>
+              <select id="market-type-input-ka10019" name="market-type">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+                <option value="201">코스피200</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="fluctuation-type-input-ka10019">등락구분:</label>
+              <select id="fluctuation-type-input-ka10019" name="fluctuation-type">
+                <option value="1">급등</option>
+                <option value="2">급락</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="time-type-input-ka10019">시간구분:</label>
+              <select id="time-type-input-ka10019" name="time-type">
+                <option value="1">분전</option>
+                <option value="2">일전</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="time-input-ka10019">시간:</label>
+              <input type="number" id="time-input-ka10019" name="time" value="60" min="1" max="99" placeholder="분 혹은 일 입력">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="trade-qty-type-input-ka10019">거래량구분:</label>
+              <select id="trade-qty-type-input-ka10019" name="trade-qty-type">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="stock-condition-input-ka10019">종목조건:</label>
+              <select id="stock-condition-input-ka10019" name="stock-condition">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="credit-condition-input-ka10019">신용조건:</label>
+              <select id="credit-condition-input-ka10019" name="credit-condition">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="price-condition-input-ka10019">가격조건:</label>
+              <select id="price-condition-input-ka10019" name="price-condition">
+                <option value="0">전체조회</option>
+                <option value="1">1천원미만</option>
+                <option value="2">1천원~2천원</option>
+                <option value="3">2천원~3천원</option>
+                <option value="4">5천원~1만원</option>
+                <option value="5">1만원이상</option>
+                <option value="8">1천원이상</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="updown-include-input-ka10019">상하한포함:</label>
+              <select id="updown-include-input-ka10019" name="updown-include">
+                <option value="0">미포함</option>
+                <option value="1">포함</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label for="exchange-type-input-ka10019">거래소구분:</label>
+              <select id="exchange-type-input-ka10019" name="exchange-type">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <button id="price-surge-plunge-submit-btn">조회</button>
+          </div>
+        </div>
+        <div id="price-surge-plunge-result"></div>
+      `;
+
+      const marketTypeInput = document.getElementById('market-type-input-ka10019') as HTMLSelectElement;
+      const fluctuationTypeInput = document.getElementById('fluctuation-type-input-ka10019') as HTMLSelectElement;
+      const timeTypeInput = document.getElementById('time-type-input-ka10019') as HTMLSelectElement;
+      const timeInput = document.getElementById('time-input-ka10019') as HTMLInputElement;
+      const tradeQtyTypeInput = document.getElementById('trade-qty-type-input-ka10019') as HTMLSelectElement;
+      const stockConditionInput = document.getElementById('stock-condition-input-ka10019') as HTMLSelectElement;
+      const creditConditionInput = document.getElementById('credit-condition-input-ka10019') as HTMLSelectElement;
+      const priceConditionInput = document.getElementById('price-condition-input-ka10019') as HTMLSelectElement;
+      const upDownIncludeInput = document.getElementById('updown-include-input-ka10019') as HTMLSelectElement;
+      const exchangeTypeInput = document.getElementById('exchange-type-input-ka10019') as HTMLSelectElement;
+      const submitBtn = document.getElementById('price-surge-plunge-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('price-surge-plunge-result') as HTMLDivElement;
+
+      const fetchAndDisplayPriceSurgePlungeData = async () => {
+        resultDiv.innerHTML = 'Fetching price surge/plunge data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-price-surge-plunge-data', {
+            marketType: marketTypeInput.value,
+            fluctuationType: fluctuationTypeInput.value,
+            timeType: timeTypeInput.value,
+            time: timeInput.value.padStart(2, '0'),
+            tradeQtyType: tradeQtyTypeInput.value,
+            stockCondition: stockConditionInput.value,
+            creditCondition: creditConditionInput.value,
+            priceCondition: priceConditionInput.value,
+            upDownInclude: upDownIncludeInput.value,
+            exchangeType: exchangeTypeInput.value,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const priceSurgePlungeData = result.priceSurgePlungeData;
+            
+            if (!priceSurgePlungeData || priceSurgePlungeData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (signCode: string) => {
+              switch(signCode) {
+                case '1': return '△';
+                case '2': return '▲';
+                case '3': return '-';
+                case '4': return '▼';
+                case '5': return '▽';
+                default: return '';
+              }
+            };
+
+            let tableHTML = '<table class="price-surge-plunge-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목분류', '종목명', '전일대비', '등락률', '기준가', 
+              '현재가', '기준대비', '거래량', '급등률'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            priceSurgePlungeData.forEach((item: any) => {
+              const previousDiff = formatNumber(item.pred_pre || '0');
+              const changeRate = item.flu_rt || '0';
+              const basePrice = formatNumber(item.base_pric || '0');
+              const currentPrice = formatNumber(item.cur_prc || '0');
+              const baseDiff = formatNumber(item.base_pre || '0');
+              const volume = formatNumber(item.trde_qty || '0');
+              const surgeRate = item.jmp_rt || '0';
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd || ''}</td>`;
+              tableHTML += `<td>${item.stk_cls || ''}</td>`;
+              tableHTML += `<td>${item.stk_nm || ''}</td>`;
+              tableHTML += `<td>${signSymbol}${previousDiff}</td>`;
+              tableHTML += `<td>${changeRate}%</td>`;
+              tableHTML += `<td>${basePrice}</td>`;
+              tableHTML += `<td>${currentPrice}</td>`;
+              tableHTML += `<td>${baseDiff}</td>`;
+              tableHTML += `<td>${volume}</td>`;
+              tableHTML += `<td>${surgeRate}%</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayPriceSurgePlungeData);
     }
   });
 });

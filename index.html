@@ -426,6 +426,96 @@
             </div>
             <div id="ka10018-result"></div>
           </div>
+
+          <div id="ka10019-content" class="api-content" style="display: none;">
+            <h2>가격급등락요청 (ka10019)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10019">시장구분:</label>
+              <select id="market_type_ka10019" name="market_type_ka10019">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+                <option value="201">코스피200</option>
+              </select>
+              
+              <label for="fluctuation_type_ka10019">등락구분:</label>
+              <select id="fluctuation_type_ka10019" name="fluctuation_type_ka10019">
+                <option value="1">급등</option>
+                <option value="2">급락</option>
+              </select>
+              
+              <label for="time_type_ka10019">시간구분:</label>
+              <select id="time_type_ka10019" name="time_type_ka10019">
+                <option value="1">분전</option>
+                <option value="2">일전</option>
+              </select>
+              
+              <label for="time_ka10019">시간:</label>
+              <input type="number" id="time_ka10019" name="time_ka10019" value="60" min="1" max="99" placeholder="분 혹은 일 입력">
+              
+              <label for="trade_qty_type_ka10019">거래량구분:</label>
+              <select id="trade_qty_type_ka10019" name="trade_qty_type_ka10019">
+                <option value="00000">전체조회</option>
+                <option value="00010">만주이상</option>
+                <option value="00050">5만주이상</option>
+                <option value="00100">10만주이상</option>
+                <option value="00150">15만주이상</option>
+                <option value="00200">20만주이상</option>
+                <option value="00300">30만주이상</option>
+                <option value="00500">50만주이상</option>
+                <option value="01000">백만주이상</option>
+              </select>
+              
+              <label for="stock_condition_ka10019">종목조건:</label>
+              <select id="stock_condition_ka10019" name="stock_condition_ka10019">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+              </select>
+              
+              <label for="credit_condition_ka10019">신용조건:</label>
+              <select id="credit_condition_ka10019" name="credit_condition_ka10019">
+                <option value="0">전체조회</option>
+                <option value="1">신용융자A군</option>
+                <option value="2">신용융자B군</option>
+                <option value="3">신용융자C군</option>
+                <option value="4">신용융자D군</option>
+                <option value="7">신용융자E군</option>
+                <option value="9">신용융자전체</option>
+              </select>
+              
+              <label for="price_condition_ka10019">가격조건:</label>
+              <select id="price_condition_ka10019" name="price_condition_ka10019">
+                <option value="0">전체조회</option>
+                <option value="1">1천원미만</option>
+                <option value="2">1천원~2천원</option>
+                <option value="3">2천원~3천원</option>
+                <option value="4">5천원~1만원</option>
+                <option value="5">1만원이상</option>
+                <option value="8">1천원이상</option>
+              </select>
+              
+              <label for="updown_include_ka10019">상하한포함:</label>
+              <select id="updown_include_ka10019" name="updown_include_ka10019">
+                <option value="0">미포함</option>
+                <option value="1">포함</option>
+              </select>
+              
+              <label for="exchange_type_ka10019">거래소구분:</label>
+              <select id="exchange_type_ka10019" name="exchange_type_ka10019">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10019-submit">조회</button>
+            </div>
+            <div id="ka10019-result"></div>
+          </div>
         </div>
       </div>
     </div>
