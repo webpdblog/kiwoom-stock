@@ -631,6 +631,55 @@
             </div>
             <div id="ka10021-result"></div>
           </div>
+
+          <div id="ka10022-content" class="api-content" style="display: none;">
+            <h2>잔량율급증요청 (ka10022)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10022">시장구분:</label>
+              <select id="market_type_ka10022" name="market_type_ka10022">
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="ratio_type_ka10022">비율구분:</label>
+              <select id="ratio_type_ka10022" name="ratio_type_ka10022">
+                <option value="1">매수/매도비율</option>
+                <option value="2">매도/매수비율</option>
+              </select>
+              
+              <label for="time_type_ka10022">시간구분(분):</label>
+              <input type="number" id="time_type_ka10022" name="time_type_ka10022" value="30" min="1" max="99" />
+              
+              <label for="trade_qty_type_ka10022">거래량구분:</label>
+              <select id="trade_qty_type_ka10022" name="trade_qty_type_ka10022">
+                <option value="5">5천주이상</option>
+                <option value="10">만주이상</option>
+                <option value="50">5만주이상</option>
+                <option value="100">10만주이상</option>
+              </select>
+              
+              <label for="stock_condition_ka10022">종목조건:</label>
+              <select id="stock_condition_ka10022" name="stock_condition_ka10022">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+                <option value="9">증20만보기</option>
+              </select>
+              
+              <label for="exchange_type_ka10022">거래소구분:</label>
+              <select id="exchange_type_ka10022" name="exchange_type_ka10022">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10022-submit">조회</button>
+            </div>
+            <div id="ka10022-result"></div>
+          </div>
         </div>
       </div>
     </div>
