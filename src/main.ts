@@ -927,3 +927,46 @@ ipcMain.handle('get-balance-rate-surge-data', async (event, { marketType, ratioT
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting trading volume surge data
+ipcMain.handle('get-trading-volume-surge-data', async (event, { marketType, sortType, timeType, tradeQtyType, timeMinute, stockCondition, priceType, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/rkinfo';
+
+    const requestBody: any = {
+      mrkt_tp: marketType,
+      sort_tp: sortType,
+      tm_tp: timeType,
+      trde_qty_tp: tradeQtyType,
+      stk_cnd: stockCondition,
+      pric_tp: priceType,
+      stex_tp: exchangeType,
+    };
+
+    // Only add time minute if timeType is "1" (분) and timeMinute is provided
+    if (timeType === "1" && timeMinute && timeMinute.trim() !== "") {
+      requestBody.tm = timeMinute;
+    }
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10023',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, tradingVolumeSurgeData: data.trde_qty_sdnin || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

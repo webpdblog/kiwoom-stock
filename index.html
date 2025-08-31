@@ -680,6 +680,88 @@
             </div>
             <div id="ka10022-result"></div>
           </div>
+
+          <div id="ka10023-content" class="api-content" style="display: none;">
+            <h2>거래량급증요청 (ka10023)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10023">시장구분:</label>
+              <select id="market_type_ka10023" name="market_type_ka10023">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="sort_type_ka10023">정렬구분:</label>
+              <select id="sort_type_ka10023" name="sort_type_ka10023">
+                <option value="1">급증량</option>
+                <option value="2">급증률</option>
+                <option value="3">급감량</option>
+                <option value="4">급감률</option>
+              </select>
+              
+              <label for="time_type_ka10023">시간구분:</label>
+              <select id="time_type_ka10023" name="time_type_ka10023">
+                <option value="1">분</option>
+                <option value="2">전일</option>
+              </select>
+              
+              <label for="trade_qty_type_ka10023">거래량구분:</label>
+              <select id="trade_qty_type_ka10023" name="trade_qty_type_ka10023">
+                <option value="5">5천주이상</option>
+                <option value="10">만주이상</option>
+                <option value="50">5만주이상</option>
+                <option value="100">10만주이상</option>
+                <option value="200">20만주이상</option>
+                <option value="300">30만주이상</option>
+                <option value="500">50만주이상</option>
+                <option value="1000">백만주이상</option>
+              </select>
+              
+              <label for="time_minute_ka10023">시간(분):</label>
+              <input type="number" id="time_minute_ka10023" name="time_minute_ka10023" min="1" max="99" placeholder="분 입력(시간구분이 '분'일 때)" />
+              
+              <label for="stock_condition_ka10023">종목조건:</label>
+              <select id="stock_condition_ka10023" name="stock_condition_ka10023">
+                <option value="0">전체조회</option>
+                <option value="1">관리종목제외</option>
+                <option value="3">우선주제외</option>
+                <option value="11">정리매매종목제외</option>
+                <option value="4">관리종목,우선주제외</option>
+                <option value="5">증100제외</option>
+                <option value="6">증100만보기</option>
+                <option value="13">증60만보기</option>
+                <option value="12">증50만보기</option>
+                <option value="7">증40만보기</option>
+                <option value="8">증30만보기</option>
+                <option value="9">증20만보기</option>
+                <option value="17">ETN제외</option>
+                <option value="14">ETF제외</option>
+                <option value="18">ETF+ETN제외</option>
+                <option value="15">스팩제외</option>
+                <option value="20">ETF+ETN+스팩제외</option>
+              </select>
+              
+              <label for="price_type_ka10023">가격구분:</label>
+              <select id="price_type_ka10023" name="price_type_ka10023">
+                <option value="0">전체조회</option>
+                <option value="2">5만원이상</option>
+                <option value="5">1만원이상</option>
+                <option value="6">5천원이상</option>
+                <option value="8">1천원이상</option>
+                <option value="9">10만원이상</option>
+              </select>
+              
+              <label for="exchange_type_ka10023">거래소구분:</label>
+              <select id="exchange_type_ka10023" name="exchange_type_ka10023">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10023-submit">조회</button>
+            </div>
+            <div id="ka10023-result"></div>
+          </div>
         </div>
       </div>
     </div>
