@@ -970,3 +970,36 @@ ipcMain.handle('get-trading-volume-surge-data', async (event, { marketType, sort
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting trading volume update data
+ipcMain.handle('get-trading-volume-update-data', async (event, { marketType, cycleType, tradeQtyType, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10024',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mrkt_tp: marketType,
+        cycle_tp: cycleType,
+        trde_qty_tp: tradeQtyType,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, tradingVolumeUpdateData: data.trde_qty_updt || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});

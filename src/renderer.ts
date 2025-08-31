@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10020', name: '호가잔량상위요청' },
           { id: 'ka10021', name: '호가잔량급증요청' },
           { id: 'ka10022', name: '잔량율급증요청' },
-          { id: 'ka10023', name: '거래량급증요청' }
+          { id: 'ka10023', name: '거래량급증요청' },
+          { id: 'ka10024', name: '거래량갱신요청' }
         ];
 
         if (apiSelector) {
@@ -3283,6 +3284,151 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       submitBtn.addEventListener('click', fetchAndDisplayTradingVolumeSurgeData);
+    } else if (actionId === 'ka10024') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>거래량갱신요청 (ka10024)</h1>
+        <div class="horizontal-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="market-type-input-ka10024">시장구분:</label>
+              <select id="market-type-input-ka10024" name="market-type">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="cycle-type-input-ka10024">주기구분:</label>
+              <select id="cycle-type-input-ka10024" name="cycle-type">
+                <option value="5">5일</option>
+                <option value="10">10일</option>
+                <option value="20">20일</option>
+                <option value="60">60일</option>
+                <option value="250">250일</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="trade-qty-type-input-ka10024">거래량구분:</label>
+              <select id="trade-qty-type-input-ka10024" name="trade-qty-type">
+                <option value="5">5천주이상</option>
+                <option value="10">만주이상</option>
+                <option value="50">5만주이상</option>
+                <option value="100">10만주이상</option>
+                <option value="200">20만주이상</option>
+                <option value="300">30만주이상</option>
+                <option value="500">50만주이상</option>
+                <option value="1000">백만주이상</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="exchange-type-input-ka10024">거래소구분:</label>
+              <select id="exchange-type-input-ka10024" name="exchange-type">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <button id="trading-volume-update-submit-btn">조회</button>
+            </div>
+          </div>
+        </div>
+        <div id="trading-volume-update-result"></div>
+      `;
+
+      const marketTypeInput = document.getElementById('market-type-input-ka10024') as HTMLSelectElement;
+      const cycleTypeInput = document.getElementById('cycle-type-input-ka10024') as HTMLSelectElement;
+      const tradeQtyTypeInput = document.getElementById('trade-qty-type-input-ka10024') as HTMLSelectElement;
+      const exchangeTypeInput = document.getElementById('exchange-type-input-ka10024') as HTMLSelectElement;
+      const submitBtn = document.getElementById('trading-volume-update-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('trading-volume-update-result') as HTMLDivElement;
+
+      const fetchAndDisplayTradingVolumeUpdateData = async () => {
+        resultDiv.innerHTML = 'Fetching trading volume update data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-trading-volume-update-data', {
+            marketType: marketTypeInput.value,
+            cycleType: cycleTypeInput.value,
+            tradeQtyType: tradeQtyTypeInput.value,
+            exchangeType: exchangeTypeInput.value,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const tradingVolumeUpdateData = result.tradingVolumeUpdateData;
+            
+            if (!tradingVolumeUpdateData || tradingVolumeUpdateData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (signCode: string) => {
+              switch(signCode) {
+                case '1': return '△';
+                case '2': return '▲';
+                case '3': return '-';
+                case '4': return '▼';
+                case '5': return '▽';
+                default: return '';
+              }
+            };
+
+            let tableHTML = '<table class="trading-volume-update-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목명', '현재가', '전일대비', '등락률', 
+              '이전거래량', '현재거래량', '매도호가', '매수호가'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            tradingVolumeUpdateData.forEach((item: any) => {
+              const currentPrice = formatNumber(item.cur_prc || '0');
+              const previousDiff = formatNumber(item.pred_pre || '0');
+              const fluRate = item.flu_rt || '0';
+              const prevTradeQty = formatNumber(item.prev_trde_qty || '0');
+              const nowTradeQty = formatNumber(item.now_trde_qty || '0');
+              const sellBid = formatNumber(item.sel_bid || '0');
+              const buyBid = formatNumber(item.buy_bid || '0');
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd || ''}</td>`;
+              tableHTML += `<td>${item.stk_nm || ''}</td>`;
+              tableHTML += `<td>${currentPrice}</td>`;
+              tableHTML += `<td>${signSymbol}${previousDiff}</td>`;
+              tableHTML += `<td>${fluRate}%</td>`;
+              tableHTML += `<td>${prevTradeQty}</td>`;
+              tableHTML += `<td>${nowTradeQty}</td>`;
+              tableHTML += `<td>${sellBid}</td>`;
+              tableHTML += `<td>${buyBid}</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayTradingVolumeUpdateData);
     }
   });
 });

@@ -762,6 +762,49 @@
             </div>
             <div id="ka10023-result"></div>
           </div>
+
+          <div id="ka10024-content" class="api-content" style="display: none;">
+            <h2>거래량갱신요청 (ka10024)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10024">시장구분:</label>
+              <select id="market_type_ka10024" name="market_type_ka10024">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="cycle_type_ka10024">주기구분:</label>
+              <select id="cycle_type_ka10024" name="cycle_type_ka10024">
+                <option value="5">5일</option>
+                <option value="10">10일</option>
+                <option value="20">20일</option>
+                <option value="60">60일</option>
+                <option value="250">250일</option>
+              </select>
+              
+              <label for="trade_qty_type_ka10024">거래량구분:</label>
+              <select id="trade_qty_type_ka10024" name="trade_qty_type_ka10024">
+                <option value="5">5천주이상</option>
+                <option value="10">만주이상</option>
+                <option value="50">5만주이상</option>
+                <option value="100">10만주이상</option>
+                <option value="200">20만주이상</option>
+                <option value="300">30만주이상</option>
+                <option value="500">50만주이상</option>
+                <option value="1000">백만주이상</option>
+              </select>
+              
+              <label for="exchange_type_ka10024">거래소구분:</label>
+              <select id="exchange_type_ka10024" name="exchange_type_ka10024">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10024-submit">조회</button>
+            </div>
+            <div id="ka10024-result"></div>
+          </div>
         </div>
       </div>
     </div>
