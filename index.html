@@ -805,6 +805,50 @@
             </div>
             <div id="ka10024-result"></div>
           </div>
+
+          <div id="ka10025-content" class="api-content" style="display: none;">
+            <h2>매물대집중요청 (ka10025)</h2>
+            <div class="input-group">
+              <label for="market_type_ka10025">시장구분:</label>
+              <select id="market_type_ka10025" name="market_type_ka10025">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+              
+              <label for="concentration_rate_ka10025">매물집중비율(%):</label>
+              <input type="number" id="concentration_rate_ka10025" name="concentration_rate_ka10025" min="0" max="100" value="50" />
+              
+              <label for="current_price_entry_ka10025">현재가진입:</label>
+              <select id="current_price_entry_ka10025" name="current_price_entry_ka10025">
+                <option value="0">현재가 매물대 진입 포함안함</option>
+                <option value="1">현재가 매물대 진입포함</option>
+              </select>
+              
+              <label for="props_count_ka10025">매물대수:</label>
+              <input type="number" id="props_count_ka10025" name="props_count_ka10025" min="1" max="99" value="10" />
+              
+              <label for="cycle_type_ka10025">주기구분:</label>
+              <select id="cycle_type_ka10025" name="cycle_type_ka10025">
+                <option value="50">50일</option>
+                <option value="100">100일</option>
+                <option value="150">150일</option>
+                <option value="200">200일</option>
+                <option value="250">250일</option>
+                <option value="300">300일</option>
+              </select>
+              
+              <label for="exchange_type_ka10025">거래소구분:</label>
+              <select id="exchange_type_ka10025" name="exchange_type_ka10025">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+              
+              <button id="ka10025-submit">조회</button>
+            </div>
+            <div id="ka10025-result"></div>
+          </div>
         </div>
       </div>
     </div>

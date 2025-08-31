@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { id: 'ka10021', name: '호가잔량급증요청' },
           { id: 'ka10022', name: '잔량율급증요청' },
           { id: 'ka10023', name: '거래량급증요청' },
-          { id: 'ka10024', name: '거래량갱신요청' }
+          { id: 'ka10024', name: '거래량갱신요청' },
+          { id: 'ka10025', name: '매물대집중요청' }
         ];
 
         if (apiSelector) {
@@ -3429,6 +3430,160 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       submitBtn.addEventListener('click', fetchAndDisplayTradingVolumeUpdateData);
+    } else if (actionId === 'ka10025') {
+      if (!mainContent) return;
+
+      mainContent.innerHTML = `
+        <h1>매물대집중요청 (ka10025)</h1>
+        <div class="horizontal-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="market-type-input-ka10025">시장구분:</label>
+              <select id="market-type-input-ka10025" name="market-type">
+                <option value="000">전체</option>
+                <option value="001">코스피</option>
+                <option value="101">코스닥</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="concentration-rate-input-ka10025">매물집중비율(%):</label>
+              <input type="number" id="concentration-rate-input-ka10025" name="concentration-rate" min="0" max="100" value="50" />
+            </div>
+            <div class="form-field">
+              <label for="current-price-entry-input-ka10025">현재가진입:</label>
+              <select id="current-price-entry-input-ka10025" name="current-price-entry">
+                <option value="0">현재가 매물대 진입 포함안함</option>
+                <option value="1">현재가 매물대 진입포함</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="props-count-input-ka10025">매물대수:</label>
+              <input type="number" id="props-count-input-ka10025" name="props-count" min="1" max="99" value="10" />
+            </div>
+            <div class="form-field">
+              <label for="cycle-type-input-ka10025">주기구분:</label>
+              <select id="cycle-type-input-ka10025" name="cycle-type">
+                <option value="50">50일</option>
+                <option value="100">100일</option>
+                <option value="150">150일</option>
+                <option value="200">200일</option>
+                <option value="250">250일</option>
+                <option value="300">300일</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="exchange-type-input-ka10025">거래소구분:</label>
+              <select id="exchange-type-input-ka10025" name="exchange-type">
+                <option value="1">KRX</option>
+                <option value="2">NXT</option>
+                <option value="3">통합</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <button id="price-concentration-submit-btn">조회</button>
+            </div>
+          </div>
+        </div>
+        <div id="price-concentration-result"></div>
+      `;
+
+      const marketTypeInput = document.getElementById('market-type-input-ka10025') as HTMLSelectElement;
+      const concentrationRateInput = document.getElementById('concentration-rate-input-ka10025') as HTMLInputElement;
+      const currentPriceEntryInput = document.getElementById('current-price-entry-input-ka10025') as HTMLSelectElement;
+      const propsCountInput = document.getElementById('props-count-input-ka10025') as HTMLInputElement;
+      const cycleTypeInput = document.getElementById('cycle-type-input-ka10025') as HTMLSelectElement;
+      const exchangeTypeInput = document.getElementById('exchange-type-input-ka10025') as HTMLSelectElement;
+      const submitBtn = document.getElementById('price-concentration-submit-btn') as HTMLButtonElement;
+      const resultDiv = document.getElementById('price-concentration-result') as HTMLDivElement;
+
+      const fetchAndDisplayPriceConcentrationData = async () => {
+        resultDiv.innerHTML = 'Fetching price concentration data...';
+        
+        try {
+          const result = await window.electronAPI.invoke('get-price-concentration-data', {
+            marketType: marketTypeInput.value,
+            concentrationRate: concentrationRateInput.value,
+            currentPriceEntry: currentPriceEntryInput.value,
+            propsCount: propsCountInput.value,
+            cycleType: cycleTypeInput.value,
+            exchangeType: exchangeTypeInput.value,
+            token: accessToken,
+          });
+
+          if (result.success) {
+            const priceConcentrationData = result.priceConcentrationData;
+            
+            if (!priceConcentrationData || priceConcentrationData.length === 0) {
+              resultDiv.innerHTML = '<p>조회된 데이터가 없습니다.</p>';
+              return;
+            }
+
+            const formatNumber = (value: string) => {
+              if (!value || value === '' || value === '0') return '0';
+              const cleanValue = value.replace(/[+\-]/g, '');
+              const num = Number(cleanValue);
+              if (!isNaN(num)) {
+                return num.toLocaleString('en-US');
+              }
+              return value;
+            };
+
+            const getSignSymbol = (signCode: string) => {
+              switch(signCode) {
+                case '1': return '△';
+                case '2': return '▲';
+                case '3': return '-';
+                case '4': return '▼';
+                case '5': return '▽';
+                default: return '';
+              }
+            };
+
+            let tableHTML = '<table class="price-concentration-table"><thead><tr>';
+            const headers = [
+              '종목코드', '종목명', '현재가', '전일대비', '등락률', '현재거래량',
+              '가격대시작', '가격대끝', '매물량', '매물비'
+            ];
+            headers.forEach(h => tableHTML += `<th>${h}</th>`);
+            tableHTML += '</tr></thead><tbody>';
+
+            priceConcentrationData.forEach((item: any) => {
+              const currentPrice = formatNumber(item.cur_prc || '0');
+              const previousDiff = formatNumber(item.pred_pre || '0');
+              const fluRate = item.flu_rt || '0';
+              const nowTradeQty = formatNumber(item.now_trde_qty || '0');
+              const priceStart = formatNumber(item.pric_strt || '0');
+              const priceEnd = formatNumber(item.pric_end || '0');
+              const propsQty = formatNumber(item.prps_qty || '0');
+              const propsRate = item.prps_rt || '0';
+              const signSymbol = getSignSymbol(item.pred_pre_sig);
+
+              tableHTML += '<tr>';
+              tableHTML += `<td>${item.stk_cd || ''}</td>`;
+              tableHTML += `<td>${item.stk_nm || ''}</td>`;
+              tableHTML += `<td>${currentPrice}</td>`;
+              tableHTML += `<td>${signSymbol}${previousDiff}</td>`;
+              tableHTML += `<td>${fluRate}%</td>`;
+              tableHTML += `<td>${nowTradeQty}</td>`;
+              tableHTML += `<td>${priceStart}</td>`;
+              tableHTML += `<td>${priceEnd}</td>`;
+              tableHTML += `<td>${propsQty}</td>`;
+              tableHTML += `<td>${propsRate}%</td>`;
+              tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            resultDiv.innerHTML = tableHTML;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p>`;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+        }
+      };
+
+      submitBtn.addEventListener('click', fetchAndDisplayPriceConcentrationData);
     }
   });
 });

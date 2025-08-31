@@ -1003,3 +1003,38 @@ ipcMain.handle('get-trading-volume-update-data', async (event, { marketType, cyc
     return { success: false, message: errorMessage };
   }
 });
+
+// IPC handler for getting price concentration data
+ipcMain.handle('get-price-concentration-data', async (event, { marketType, concentrationRate, currentPriceEntry, propsCount, cycleType, exchangeType, token }) => {
+  try {
+    const KIWOOM_API_URL = 'https://api.kiwoom.com/api/dostk/stkinfo';
+
+    const response = await fetch(KIWOOM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'api-id': 'ka10025',
+        'authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mrkt_tp: marketType,
+        prps_cnctr_rt: concentrationRate,
+        cur_prc_entry: currentPriceEntry,
+        prpscnt: propsCount,
+        cycle_tp: cycleType,
+        stex_tp: exchangeType,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.return_code === 0) {
+      return { success: true, priceConcentrationData: data.prps_cnctr || [] };
+    } else {
+      return { success: false, message: data.return_msg || 'Unknown error' };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+});
